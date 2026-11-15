@@ -1,0 +1,43 @@
+name: gestock_pos
+description: "GeStock POS — Gestion de stock et point de vente, hors ligne avec synchronisation cloud."
+publish_to: 'none'
+
+# version: <nom de version>+<numéro de build Android (versionCode)>
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:          # Traductions Material (dates, boutons…) en français / arabe
+    sdk: flutter
+
+  # --- Étape 1 : base locale + état + formatage ---
+  sqflite: ^2.3.3                 # Base SQLite embarquée (fonctionne 100 % hors ligne)
+  path: ^1.9.0                    # Construction du chemin du fichier .db
+  provider: ^6.1.2                # Gestion d'état simple (panier, etc.)
+  intl: any                       # Formatage monétaire / dates (version imposée par flutter_localizations)
+  uuid: ^4.4.0                    # Identifiants uniques (indispensables pour la synchro multi-appareils)
+
+  # --- Étape 2 : messagerie / Étape 3 : PDF (décommenter à l'étape 3) ---
+  # pdf: ^3.11.0
+  # printing: ^5.13.0
+  url_launcher: ^6.3.0            # v2 : ouverture de WhatsApp / SMS / appel
+  # share_plus: ^10.0.0
+  # path_provider: ^2.1.4
+
+  # --- Étape 5 : synchronisation cloud (décommenter après configuration Firebase) ---
+  # firebase_core: ^3.6.0
+  # firebase_auth: ^5.3.0
+  # cloud_firestore: ^5.4.0
+  # connectivity_plus: ^6.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
