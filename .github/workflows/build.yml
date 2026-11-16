@@ -19,6 +19,9 @@ jobs:
           channel: 'stable'
       - name: Generate Android folder
         run: flutter create . --platforms=android
+      - name: Patch AndroidManifest for WhatsApp and SMS
+        run: |
+          sed -i 's|</manifest>|<queries><intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent><intent><action android:name="android.intent.action.SENDTO" /><data android:scheme="sms" /></intent><intent><action android:name="android.intent.action.VIEW" /><data android:scheme="sms" /></intent></queries>\n</manifest>|g' android/app/src/main/AndroidManifest.xml
       - name: Get dependencies
         run: flutter pub get
       - name: Build APK
