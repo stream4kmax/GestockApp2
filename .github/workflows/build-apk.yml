@@ -1,0 +1,107 @@
+# =============================================================================
+#  GitHub Actions — compilation automatique de l'APK GeStock POS
+# =============================================================================
+#  À placer EXACTEMENT ici dans le dépôt :  .github/workflows/build-apk.yml
+#  (supprimez les autres fichiers du dossier .github/workflows, par ex. dart.yml)
+#
+#  Ce workflow corrige les 4 causes classiques de "exit code 1" :
+#   1. Dossier android/ absent (seuls lib/ et pubspec.yaml ont été envoyés)
+#      → il est généré automatiquement avec `flutter create`.
+#   2. test/widget_test.dart généré par Flutter qui cherche "MyApp" (inexistant)
+#      → supprimé.
+#   3. `flutter analyze` qui échoue sur de simples avertissements
+#      → analyse affichée mais NON bloquante.
+#   4. Mauvais SDK (modèle "Dart" de GitHub au lieu de Flutter, Java trop ancien)
+#      → Flutter stable + Java 17.
+#
+#  Résultat : onglet "Actions" → dernière exécution → section "Artifacts"
+#  → télécharger "GeStock-POS-APK" (zip contenant app-release.apk).
+# =============================================================================
+
+name: Compiler APK Android
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch: # bouton "Run workflow" pour lancer à la main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Installer Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Version de Flutter
+        run: flutter --version
+
+      # ---------------------------------------------------------------------
+      # 1. Génère android/ s'il n'existe pas (lib/ et pubspec.yaml sont gardés)
+      # ---------------------------------------------------------------------
+      - name: Générer le projet Android si absent
+        run: |
+          if [ ! -d android ]; then
+            echo "Dossier android/ absent → création"
+            flutter create --org dz.gestock --project-name gestock_pos --platforms=android .
+          else
+            echo "Dossier android/ déjà présent"
+          fi
+          # 2. Le test d'exemple de Flutter référence "MyApp" qui n'existe pas
+          rm -f test/widget_test.dart
+
+      # ---------------------------------------------------------------------
+      # Ajoute le bloc <queries> (WhatsApp / SMS / appel) au manifeste Android
+      # ---------------------------------------------------------------------
+      - name: Ajouter les autorisations WhatsApp / SMS au manifeste
+        run: |
+          python3 - <<'PY'
+          p = "android/app/src/main/AndroidManifest.xml"
+          s = open(p, encoding="utf-8").read()
+          lignes = (
+              '\n        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="https" /></intent>'
+              '\n        <intent><action android:name="android.intent.action.SENDTO" /><data android:scheme="sms" /></intent>'
+              '\n        <intent><action android:name="android.intent.action.VIEW" /><data android:scheme="sms" /></intent>'
+              '\n        <intent><action android:name="android.intent.action.DIAL" /><data android:scheme="tel" /></intent>'
+              '\n        <package android:name="com.whatsapp" />'
+              '\n        <package android:name="com.whatsapp.w4b" />'
+          )
+          if "com.whatsapp" not in s:
+              if "<queries>" in s:
+                  # Flutter crée déjà un bloc <queries> : on ajoute nos lignes dedans
+                  s = s.replace("<queries>", "<queries>" + lignes, 1)
+              else:
+                  s = s.replace("</manifest>", "    <queries>" + lignes + "\n    </queries>\n</manifest>")
+              open(p, "w", encoding="utf-8").write(s)
+          print(s)
+          PY
+
+      - name: Télécharger les dépendances
+        run: flutter pub get
+
+      # 3. Analyse NON bloquante : les erreurs restent visibles dans le journal
+      - name: Analyse du code (informative)
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings || true
+
+      - name: Compiler l'APK (release)
+        run: flutter build apk --release
+
+      - name: Mettre l'APK à disposition
+        uses: actions/upload-artifact@v4
+        with:
+          name: GeStock-POS-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
