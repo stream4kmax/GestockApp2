@@ -19,6 +19,7 @@
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:gestock_pos/core/database/database_helper.dart';
+import 'package:gestock_pos/core/settings/app_settings.dart';
 import 'package:gestock_pos/core/utils/formatters.dart';
 import 'package:gestock_pos/core/utils/ids.dart';
 
@@ -36,8 +37,8 @@ class MessagingService {
   MessagingService._();
   static final MessagingService instance = MessagingService._();
 
-  /// Indicatif pays par défaut (Algérie). À rendre paramétrable si besoin.
-  static const String indicatifPays = '213';
+  /// Indicatif pays (Outils > Options ; 213 = Algérie par défaut).
+  static String get indicatifPays => AppSettings.instance.indicatifPays;
 
   // ---------------------------------------------------------------------------
   //  Numéros

@@ -24,6 +24,7 @@ import 'package:provider/provider.dart';
 import 'package:gestock_pos/core/constants/app_constants.dart';
 import 'package:gestock_pos/core/constants/type_document.dart';
 import 'package:gestock_pos/core/constants/type_tarif.dart';
+import 'package:gestock_pos/core/settings/app_settings.dart';
 import 'package:gestock_pos/core/theme/app_colors.dart';
 import 'package:gestock_pos/core/utils/formatters.dart';
 import 'package:gestock_pos/core/widgets/communs.dart';
@@ -50,7 +51,8 @@ class PosPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Fournit un panier neuf à cet écran et à tous ses descendants.
     return ChangeNotifierProvider(
-      create: (_) => CartProvider(controleStock: type.controleStock),
+      // Contrôle du stock sauf si l'option « Autoriser le stock négatif » est activée
+      create: (_) => CartProvider(controleStock: type.controleStock && !AppSettings.instance.stockNegatifAutorise),
       child: _PosView(type: type),
     );
   }

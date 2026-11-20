@@ -14,13 +14,13 @@
 //   6. Solde du client (reste dû)
 // =============================================================================
 
-import 'package:sqflite/sqflite.dart';
 
-import 'package:gestock_pos/core/constants/app_constants.dart';
 import 'package:gestock_pos/core/constants/mode_paiement.dart';
 import 'package:gestock_pos/core/constants/type_document.dart';
 import 'package:gestock_pos/core/constants/type_tarif.dart';
 import 'package:gestock_pos/core/database/database_helper.dart';
+import 'package:gestock_pos/core/database/numerotation.dart';
+import 'package:gestock_pos/core/settings/app_settings.dart';
 import 'package:gestock_pos/core/utils/formatters.dart';
 import 'package:gestock_pos/core/utils/ids.dart';
 import 'package:gestock_pos/data/models/client.dart';
@@ -71,7 +71,7 @@ class VenteRepository {
           {...m, 'created_at': maintenant, 'updated_at': maintenant, 'sync_status': 1};
 
       // 1. Numérotation
-      final numero = await _prochainNumero(txn, type);
+      final numero = await prochainNumero(txn, type); // numérotation partagée (numerotation.dart)
 
       // 2. En-tête
       await txn.insert('documents', h({
@@ -82,7 +82,7 @@ class VenteRepository {
         'tiers_type': 'C',
         'tiers_id': client.id,
         'tiers_nom': client.nom,
-        'point_vente_id': kPointVenteId,
+        'point_vente_id': AppSettings.instance.pointVenteId,
         'document_source_id': documentSourceId,
         'statut': 'VALIDE',
         'total_ht_brut': totaux.htBrut,
@@ -161,7 +161,7 @@ class VenteRepository {
           await txn.insert('mouvements_caisse', h({
             'id': nouvelId(),
             'date_mvt': dateDoc,
-            'point_vente_id': kPointVenteId,
+            'point_vente_id': AppSettings.instance.pointVenteId,
             'sens': type.effetCompte,
             'montant': encaisse,
             'libelle': '${type.libelle} $numero',
@@ -181,25 +181,5 @@ class VenteRepository {
 
       return DocumentEnregistre(id: docId, numero: numero);
     });
-  }
-
-  /// Renvoie le prochain numéro, ex. "VC-PV1-2026-00042".
-  /// La numérotation repart à 1 chaque année et est propre à chaque point de
-  /// vente : deux téléphones ne peuvent jamais générer le même numéro.
-  Future<String> _prochainNumero(Transaction txn, TypeDocument type) async {
-    final annee = DateTime.now().year;
-    final rows = await txn.query(
-      'compteurs',
-      where: 'type_doc = ? AND point_vente = ? AND annee = ?',
-      whereArgs: [type.prefixe, kPointVenteCode, annee],
-    );
-    final suivant = rows.isEmpty ? 1 : (rows.first['dernier'] as int) + 1;
-
-    await txn.insert(
-      'compteurs',
-      {'type_doc': type.prefixe, 'point_vente': kPointVenteCode, 'annee': annee, 'dernier': suivant},
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    return '${type.prefixe}-$kPointVenteCode-$annee-${suivant.toString().padLeft(5, '0')}';
   }
 }

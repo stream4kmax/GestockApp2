@@ -70,6 +70,13 @@ class ArticleRepository {
     return rows.isEmpty ? null : Article.fromMap(rows.first);
   }
 
+  /// Un article par son identifiant (même supprimé : utile pour l'historique).
+  Future<Article?> parId(String id) async {
+    final db = await DatabaseHelper.instance.database;
+    final rows = await db.rawQuery('$_select WHERE a.id = ? LIMIT 1', [id]);
+    return rows.isEmpty ? null : Article.fromMap(rows.first);
+  }
+
   /// Articles fournis par un fournisseur (les plus urgents en premier).
   Future<List<Article>> parFournisseur(String fournisseurId) async {
     final db = await DatabaseHelper.instance.database;

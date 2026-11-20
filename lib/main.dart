@@ -16,6 +16,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'package:gestock_pos/core/database/database_helper.dart';
+import 'package:gestock_pos/core/settings/app_settings.dart';
 import 'package:gestock_pos/core/theme/app_colors.dart';
 import 'package:gestock_pos/core/theme/app_theme.dart';
 import 'package:gestock_pos/features/home/home_shell.dart';
@@ -34,6 +35,9 @@ Future<void> main() async {
 
   // Ouvre la base ; en v2, onUpgrade ajoute les nouvelles colonnes si besoin.
   await DatabaseHelper.instance.database;
+
+  // Étape 2b : charge les réglages (point de vente, options, ticket…)
+  await AppSettings.instance.charger();
 
   runApp(const GestockApp());
 }
