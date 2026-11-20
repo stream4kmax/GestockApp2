@@ -157,6 +157,16 @@ final List<ModuleApp> modulesApp = [
           (_) => const ClientListPage(titre: 'En cours dépassé', filtreInitial: FiltreClient.encoursDepasse)),
       SousModule('Règlement fournisseur', Icons.payments, (_) => const ReglementPage(tiersType: 'F')),
       SousModule('Relance fournisseur', Icons.campaign, (_) => const FournisseurListPage()),
+      // v2c : liste des crédits clients / dettes fournisseurs antérieurs à l'appli
+      SousModule(
+        'Crédits antérieurs',
+        Icons.history_edu,
+        (_) => const DocumentListPage(
+          titre: 'Crédits et dettes antérieurs',
+          types: [TypeDocument.soldeInitialClient, TypeDocument.soldeInitialFournisseur],
+          couleur: AppColors.tresorerie,
+        ),
+      ),
     ],
   ),
 

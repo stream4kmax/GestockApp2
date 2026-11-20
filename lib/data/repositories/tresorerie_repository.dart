@@ -67,8 +67,9 @@ class Reglement {
   final String? reference;
   final String? documentNumero;
 
-  String get modeLibelle =>
-      ModePaiement.values.where((m) => m.code == mode).map((m) => m.libelle).firstOrNull ?? mode;
+  String get modeLibelle => mode == 'AJUSTEMENT'
+      ? 'Ajustement de solde'
+      : ModePaiement.values.where((m) => m.code == mode).map((m) => m.libelle).firstOrNull ?? mode;
 }
 
 class TresorerieRepository {
@@ -107,7 +108,7 @@ class TresorerieRepository {
     final db = await DatabaseHelper.instance.database;
     final rows = await db.rawQuery('''
       SELECT mode, COALESCE(SUM(sens * montant), 0) AS total FROM reglements
-      WHERE deleted = 0 AND tiers_type = 'C' AND date_reg >= ? AND date_reg < ?
+      WHERE deleted = 0 AND tiers_type = 'C' AND mode <> 'AJUSTEMENT' AND date_reg >= ? AND date_reg < ?
       GROUP BY mode ORDER BY total DESC
     ''', [debut.toIso8601String(), fin.toIso8601String()]);
     return {for (final r in rows) r['mode'] as String: (r['total'] as num).toDouble()};
@@ -156,13 +157,58 @@ class TresorerieRepository {
     required ModePaiement mode,
     String? reference,
     String? notes,
+  }) =>
+      _regler(
+        tiersType: tiersType,
+        tiersId: tiersId,
+        tiersNom: tiersNom,
+        montant: montant,
+        modeCode: mode.code,
+        versCaisse: mode == ModePaiement.especes,
+        reference: reference,
+        notes: notes,
+      );
+
+  /// v2c : diminue le solde d'un tiers SANS mouvement d'argent (correction,
+  /// remise de dette). Enregistré comme règlement « AJUSTEMENT » : il solde
+  /// les documents les plus anciens mais n'apparaît ni en caisse ni dans les
+  /// encaissements.
+  Future<int> reduireSolde({
+    required String tiersType,
+    required String tiersId,
+    required String tiersNom,
+    required double montant,
+    String? motif,
+  }) =>
+      _regler(
+        tiersType: tiersType,
+        tiersId: tiersId,
+        tiersNom: tiersNom,
+        montant: montant,
+        modeCode: modeAjustement,
+        versCaisse: false,
+        notes: motif,
+      );
+
+  static const String modeAjustement = 'AJUSTEMENT';
+
+  Future<int> _regler({
+    required String tiersType,
+    required String tiersId,
+    required String tiersNom,
+    required double montant,
+    required String modeCode,
+    required bool versCaisse,
+    String? reference,
+    String? notes,
   }) async {
     if (montant <= 0) throw Exception('Le montant doit être supérieur à 0.');
     final client = tiersType == 'C';
     final sens = client ? 1 : -1; // client : on reçoit ; fournisseur : on verse
     final table = client ? 'clients' : 'fournisseurs';
     // Documents qui créent une dette du tiers (ventes) ou envers lui (achats)
-    final types = client ? "('VC','BL','FV')" : "('BR','FA')";
+    // (v2c : + crédits / dettes antérieurs SC et SF)
+    final types = client ? "('SC','VC','BL','FV')" : "('SF','BR','FA')";
 
     final db = await DatabaseHelper.instance.database;
     return db.transaction<int>((txn) async {
@@ -179,12 +225,12 @@ class TresorerieRepository {
         'tiers_id': tiersId,
         'sens': sens,
         'montant': round2(montant),
-        'mode': mode.code,
+        'mode': modeCode,
         'reference': reference,
         'notes': notes,
       }));
 
-      if (mode == ModePaiement.especes) {
+      if (versCaisse) {
         await txn.insert('mouvements_caisse', h({
           'id': nouvelId(),
           'date_mvt': date,

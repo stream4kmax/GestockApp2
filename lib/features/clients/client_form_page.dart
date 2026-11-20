@@ -9,6 +9,7 @@ import 'package:gestock_pos/core/widgets/communs.dart';
 import 'package:gestock_pos/core/widgets/relief_3d.dart';
 import 'package:gestock_pos/data/models/client.dart';
 import 'package:gestock_pos/data/repositories/client_repository.dart';
+import 'package:gestock_pos/data/repositories/solde_repository.dart';
 
 class ClientFormPage extends StatefulWidget {
   const ClientFormPage({super.key, this.client});
@@ -34,11 +35,12 @@ class _ClientFormPageState extends State<ClientFormPage> {
   late final _plafond =
       TextEditingController(text: (c?.plafondCredit ?? 0) == 0 ? '' : c!.plafondCredit.toStringAsFixed(0));
   late TypeTarif _tarif = c?.typeTarif ?? TypeTarif.detail;
+  final _creditAnterieur = TextEditingController(); // v2c : dette existante avant l'appli
   bool _enregistrement = false;
 
   @override
   void dispose() {
-    for (final x in [_nom, _code, _tel, _whatsapp, _email, _adresse, _nif, _rc, _plafond]) {
+    for (final x in [_nom, _code, _tel, _whatsapp, _email, _adresse, _nif, _rc, _plafond, _creditAnterieur]) {
       x.dispose();
     }
     super.dispose();
@@ -62,7 +64,13 @@ class _ClientFormPageState extends State<ClientFormPage> {
     );
     try {
       if (c == null) {
-        await _repo.creer(nouveau);
+        final id = await _repo.creer(nouveau);
+        // v2c : reprise du crédit que le client devait AVANT l'application
+        final credit = parseNombre(_creditAnterieur.text) ?? 0;
+        if (credit > 0) {
+          await SoldeRepository().creerSoldeInitial(
+              tiersType: 'C', tiersId: id, tiersNom: nouveau.nom, montant: credit);
+        }
       } else {
         await _repo.modifier(nouveau);
       }
@@ -123,6 +131,11 @@ class _ClientFormPageState extends State<ClientFormPage> {
             _champ(_rc, 'Registre du commerce', Icons.description),
             _champ(_plafond, 'Plafond de crédit (DA)', Icons.credit_score,
                 clavier: TextInputType.number, aide: 'Vide = pas de limite'),
+            // v2c : uniquement à la création ; ensuite « Ajuster le solde » sur la fiche
+            if (c == null)
+              _champ(_creditAnterieur, 'Crédit antérieur (DA)', Icons.history_edu,
+                  clavier: const TextInputType.numberWithOptions(decimal: true),
+                  aide: 'Ce que le client vous doit déjà avant d\'utiliser l\'application'),
             const Text('Tarif appliqué par défaut au POS', style: TextStyle(fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             SegmentedButton<TypeTarif>(

@@ -19,6 +19,7 @@ import 'package:gestock_pos/data/repositories/client_repository.dart';
 import 'package:gestock_pos/data/repositories/document_repository.dart';
 import 'package:gestock_pos/data/repositories/reference_repository.dart';
 import 'package:gestock_pos/features/clients/client_form_page.dart';
+import 'package:gestock_pos/features/tresorerie/ajuster_solde_dialog.dart';
 import 'package:gestock_pos/services/messaging_service.dart';
 
 class ClientDetailPage extends StatefulWidget {
@@ -145,6 +146,16 @@ class _ClientDetailPageState extends State<ClientDetailPage> {
                               style: TextStyle(
                                   fontSize: 12, color: c.encoursDepasse ? AppColors.supprimer : null)),
                       ]),
+                    ),
+                    // v2c : reprise d'un crédit antérieur / correction du solde
+                    TextButton.icon(
+                      onPressed: () async {
+                        final ok = await ajusterSoldeDialog(context,
+                            tiersType: 'C', tiersId: c.id, tiersNom: c.nom, soldeActuel: c.solde);
+                        if (ok) _charger();
+                      },
+                      icon: const Icon(Icons.edit, size: 18),
+                      label: const Text('Ajuster'),
                     ),
                   ]),
                 ),

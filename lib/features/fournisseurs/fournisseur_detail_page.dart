@@ -22,6 +22,7 @@ import 'package:gestock_pos/data/repositories/fournisseur_repository.dart';
 import 'package:gestock_pos/data/repositories/reference_repository.dart';
 import 'package:gestock_pos/features/article/article_form_page.dart';
 import 'package:gestock_pos/features/fournisseurs/fournisseur_form_page.dart';
+import 'package:gestock_pos/features/tresorerie/ajuster_solde_dialog.dart';
 import 'package:gestock_pos/services/messaging_service.dart';
 
 class FournisseurDetailPage extends StatefulWidget {
@@ -136,6 +137,24 @@ class _FournisseurDetailPageState extends State<FournisseurDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // v2c : ce que vous devez au fournisseur + ajustement
+                    Row(children: [
+                      Expanded(
+                        child: Text('Vous devez : ${fmtMonnaie(f.solde)}',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: f.solde > 0 ? AppColors.supprimer : AppColors.ajouter)),
+                      ),
+                      TextButton.icon(
+                        onPressed: () async {
+                          final ok = await ajusterSoldeDialog(context,
+                              tiersType: 'F', tiersId: f.id, tiersNom: f.nom, soldeActuel: f.solde);
+                          if (ok) _charger();
+                        },
+                        icon: const Icon(Icons.edit, size: 18),
+                        label: const Text('Ajuster'),
+                      ),
+                    ]),
                     if (f.telephone != null) _Info(Icons.phone, f.telephone!),
                     if (f.email != null) _Info(Icons.email, f.email!),
                     if (f.adresse != null) _Info(Icons.place, f.adresse!),

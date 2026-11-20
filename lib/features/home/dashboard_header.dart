@@ -60,6 +60,26 @@ class _DashboardHeaderState extends State<DashboardHeader> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // --- Marque GHA Stock DZ (logo v2c) ---
+          Row(children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset('assets/logo/gha_icone.png', width: 44, height: 44),
+            ),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text.rich(TextSpan(children: [
+                  TextSpan(text: 'GHA ', style: TextStyle(color: AppColors.vente)),
+                  TextSpan(text: 'STOCK DZ', style: TextStyle(color: AppColors.ajouter, fontStyle: FontStyle.italic)),
+                ]), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: 1.5)),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 10),
+
           // --- Date du jour ---
           Row(
             children: [

@@ -34,7 +34,14 @@ enum TypeDocument {
 
   // ----------------------------- STOCK -----------------------------------
   bonEntree('BE', 'Bon d\'entrée', effetStock: 1, effetCompte: 0),
-  bonSortie('BS', 'Bon de sortie', effetStock: -1, effetCompte: 0);
+  bonSortie('BS', 'Bon de sortie', effetStock: -1, effetCompte: 0),
+
+  // ------------------------ SOLDES ANTÉRIEURS (v2c) -----------------------
+  // Dettes qui existaient AVANT l'utilisation de l'application. Elles comptent
+  // dans le solde et l'état de paiement, mais PAS dans le chiffre d'affaires,
+  // le bénéfice ni le stock.
+  soldeInitialClient('SC', 'Crédit antérieur client', effetStock: 0, effetCompte: 1),
+  soldeInitialFournisseur('SF', 'Dette antérieure fournisseur', effetStock: 0, effetCompte: 1);
 
   const TypeDocument(this.prefixe, this.libelle,
       {required this.effetStock, required this.effetCompte});

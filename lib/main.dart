@@ -1,5 +1,5 @@
 // =============================================================================
-//  GeStock POS — Point d'entrée de l'application (v2)
+//  GHA Stock DZ (Gestion · Hassani · Android) — Point d'entrée (v2)
 // =============================================================================
 //  Changements v2 :
 //   • Thème CLAIR uniquement (le mode sombre est supprimé).
@@ -48,7 +48,7 @@ class GestockApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'GeStock POS',
+      title: 'GHA Stock DZ', // Gestion · Hassani · Android
       debugShowCheckedModeBanner: false,
 
       // Thème clair UNIQUEMENT

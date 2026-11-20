@@ -35,7 +35,12 @@ class _EtatPaiementPageState extends State<EtatPaiementPage> {
   List<DocumentResume> _docs = [];
   bool _chargement = true;
 
-  static const _types = [TypeDocument.venteComptoir, TypeDocument.bonLivraison, TypeDocument.factureVente];
+  static const _types = [
+    TypeDocument.soldeInitialClient, // v2c : crédits antérieurs
+    TypeDocument.venteComptoir,
+    TypeDocument.bonLivraison,
+    TypeDocument.factureVente,
+  ];
 
   @override
   void initState() {

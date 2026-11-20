@@ -1,5 +1,5 @@
 name: gestock_pos
-description: "GeStock POS — Gestion de stock et point de vente, hors ligne avec synchronisation cloud."
+description: "GHA Stock DZ (Gestion · Hassani · Android) — stock et point de vente, hors ligne."
 publish_to: 'none'
 
 # version: <nom de version>+<numéro de build Android (versionCode)>
@@ -38,6 +38,21 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.14.1   # v2c : génère l'icône GHA de l'application
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/logo/            # logo GHA Stock DZ (affiché sur l'accueil)
+
+# -----------------------------------------------------------------------------
+# Icône de l'application (commande : dart run flutter_launcher_icons)
+# Le workflow GitHub l'exécute automatiquement avant la compilation.
+# -----------------------------------------------------------------------------
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/logo/gha_icone.png"                       # anciens Android
+  adaptive_icon_background: "#F4F6FA"                           # Android 8+ : fond
+  adaptive_icon_foreground: "assets/logo/gha_icone_foreground.png" # Android 8+ : dessin
+  min_sdk_android: 21

@@ -6,7 +6,9 @@ import 'package:gestock_pos/core/theme/app_colors.dart';
 import 'package:gestock_pos/core/widgets/communs.dart';
 import 'package:gestock_pos/core/widgets/relief_3d.dart';
 import 'package:gestock_pos/data/models/fournisseur.dart';
+import 'package:gestock_pos/core/utils/formatters.dart';
 import 'package:gestock_pos/data/repositories/fournisseur_repository.dart';
+import 'package:gestock_pos/data/repositories/solde_repository.dart';
 
 class FournisseurFormPage extends StatefulWidget {
   const FournisseurFormPage({super.key, this.fournisseur});
@@ -29,11 +31,12 @@ class _FournisseurFormPageState extends State<FournisseurFormPage> {
   late final _adresse = TextEditingController(text: f?.adresse);
   late final _nif = TextEditingController(text: f?.nif);
   late final _rc = TextEditingController(text: f?.rc);
+  final _detteAnterieure = TextEditingController(); // v2c
   bool _enregistrement = false;
 
   @override
   void dispose() {
-    for (final c in [_nom, _code, _tel, _whatsapp, _email, _adresse, _nif, _rc]) {
+    for (final c in [_nom, _code, _tel, _whatsapp, _email, _adresse, _nif, _rc, _detteAnterieure]) {
       c.dispose();
     }
     super.dispose();
@@ -55,7 +58,13 @@ class _FournisseurFormPageState extends State<FournisseurFormPage> {
     );
     try {
       if (f == null) {
-        await _repo.creer(nouveau);
+        final id = await _repo.creer(nouveau);
+        // v2c : reprise de ce que vous deviez AVANT l'application
+        final dette = parseNombre(_detteAnterieure.text) ?? 0;
+        if (dette > 0) {
+          await SoldeRepository().creerSoldeInitial(
+              tiersType: 'F', tiersId: id, tiersNom: nouveau.nom, montant: dette);
+        }
       } else {
         await _repo.modifier(nouveau);
       }
@@ -110,6 +119,10 @@ class _FournisseurFormPageState extends State<FournisseurFormPage> {
             _champ(_adresse, 'Adresse', Icons.place),
             _champ(_nif, 'NIF', Icons.badge),
             _champ(_rc, 'Registre du commerce', Icons.description),
+            if (f == null)
+              _champ(_detteAnterieure, 'Dette antérieure (DA)', Icons.history_edu,
+                  clavier: const TextInputType.numberWithOptions(decimal: true),
+                  aide: 'Ce que vous devez déjà à ce fournisseur avant d\'utiliser l\'application'),
           ],
         ),
       ),
